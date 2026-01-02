@@ -70,6 +70,7 @@
 
 [Tune TCP ](https://cromwell-intl.com/open-source/performance-tuning/tcp.html)
 
+[low latency guide](https://rigtorp.se/low-latency-guide/)
 
 ```
 https://cherusk.github.io/linux-tcp-window-scaling-quantification-rmemwmem.html
@@ -98,6 +99,8 @@ Congestion control is the TCP protocol's method of managing data flow over a net
 TCP supports several congestion algorithms, to enable each of them you need to load the module. The default is the Reno algorithm, the Cubic and BBR are also available. The algorithms available in your kernel can be checked with the next command: sysctl net.ipv4.tcp_available_congestion_control.
 ```
 
+[bandwith deplay](https://en.wikipedia.org/wiki/Bandwidth-delay_product)
+
 ##tools name
 ```
 nc
@@ -106,3 +109,54 @@ atop
 dd (disk)
 iperf
 nuttcp (like iperf)
+```
+
+```
+
+
+In Linux/Intel I would use following methodology for performance analysis:
+
+Hardware:
+
+    turbostat
+    Look for C/P states for cores, frequencies, number of SMIs. [1]
+    cpufreq-info
+    Look for current driver, frequencies, and governor.
+    atop
+    Look for interrupt distribution across cores
+    Look for context switches, interrupts.
+    ethtool
+    -S for stats, look for errors, drops, overruns, missed interrupts, etc
+    -k for offloads, enable GRO/GSO, rss(/rps/rfs)/xps
+    -g for ring sizes, increase
+    -c for interrupt coalescing
+
+Kernel:
+
+    /proc/net/softirq[2] and /proc/interrupts[3]
+    Again, distribution, missed, delayed interrupts, (optional) NUMA-affinity
+    perf top
+    Look where kernel/benchmark spends its time.
+    iptables
+    Look if there are rules (if any) that may affect performance.
+    netstat -s, netstat -m, /proc/net/*
+    Look for error counters and buffer counts
+    sysctl / grub
+    So much to tweak here. Try increasing hashtable sizes, playing with memory buffers, congestion control, and other knobs.
+
+In your case your main problem is interrupt distribution across the cores, so fixing it will be your best corse of action.
+
+PS. Do not forget that in those kinds of benchmarks kernel and driver/firmware versions play a significant role.
+
+PPS. You probably want to install the newest ixgbe driver from Intel[4]. Do not forget to read README there and examine scripts directory. It has lots of performance-related tips.
+
+[0] Intel also has nice docs about scaling network performance
+https://www.kernel.org/doc/Documentation/networking/scaling.txt
+[1] You can pin your processor to a specific C-state:
+https://gist.github.com/SaveTheRbtz/f5e8d1ca7b55b6a7897b
+[2] You can analyze that data with:
+https://gist.github.com/SaveTheRbtz/172b2e2eb3cbd96b598d
+[3] You can set affinity with:
+https://gist.github.com/SaveTheRbtz/8875474
+[4] https://sourceforge.net/projects/e1000/files/ixgbe%20stable/
+```
