@@ -25,9 +25,11 @@ net.ipv4.tcp_wmem: "4096 1048576 16777216"
 
 net.ipv4.tcp_slow_start_after_idle: "0"
 net.ipv4.tcp_fin_timeout: "15"
+
 net.ipv4.tcp_keepalive_time: "300"
 net.ipv4.tcp_keepalive_intvl: "30"
 net.ipv4.tcp_keepalive_probes: "5"
+
 net.ipv4.tcp_max_tw_buckets: "1440000"
 net.ipv4.tcp_syncookies: "1"
 net.ipv4.tcp_timestamps: "1"
@@ -37,21 +39,15 @@ net.ipv4.ip_local_port_range: "1024 65535"
 net.ipv4.ip_forward: "1"
 
 net.bridge.bridge-nf-call-iptables: "1"
-net.bridge.bridge-nf-call-ip6tables: "1"
-
-net.ipv6.conf.all.forwarding: "1"
 net.netfilter.nf_conntrack_max: "1048576"
-
 fs.file-max: "2097152"
 fs.nr_open: "2097152"
 fs.inotify.max_user_watches: "524288"
 fs.inotify.max_user_instances: "512"
-
 vm.dirty_ratio: "40"
 vm.dirty_background_ratio: "10"
 vm.max_map_count: "262144"
 vm.overcommit_memory: "1"
-
 kernel.pid_max: "4194304"
 kernel.threads-max: "4194304"
 ```
@@ -124,6 +120,40 @@ Memory = (tcp_rmem_max + tcp_wmem_max) × active_connections
 # Example with your 10 MB settings:
 1000 connections × 20 MB = 20 GB (theoretical max)
 100 connections × 20 MB = 2 GB
+```
+
+#### 5. net.ipv4.tcp_slow_start_after_idle & net.ipv4.tcp_fin_timeout
+`net.ipv4.tcp_slow_start_after_idle` controls whether TCP resets to slow start after an idle period
+```
+Example:
+Connection transfers 1 GB, then idle for 10 seconds, then resumes:
+
+tcp_slow_start_after_idle = 1:
+  Resume → Start slow → Ramp up → Full speed (takes time)
+
+tcp_slow_start_after_idle = 0:
+  Resume → Immediately full speed
+```
+`net.ipv4.tcp_fin_timeout` controls how long a socket stays in FIN_WAIT_2 state waiting for final close.
+```
+Normal close sequence:
+1. App calls close() → sends FIN → enters FIN_WAIT_1
+2. Receives ACK → enters FIN_WAIT_2
+3. Receives FIN from other side → sends ACK → enters TIME_WAIT
+4. Waits 2×MSL (60s default) → CLOSED
+
+tcp_fin_timeout controls step 2-3 timeout
+```
+
+#### 6. keepalive setting
+`net.ipv4.tcp_keepalive_time` the number of seconds a connection needs to be idle before
+TCP begins sending out keep-alive probes.  Keep-alives are sent only when the `SO_KEEPALIVE` socket option is enabled. <br>
+`net.ipv4.tcp_keepalive_intvl` the number of seconds between TCP keep-alive probes. <br>
+`net.ipv4.tcp_keepalive_probes` the maximum number of TCP keep-alive probes to send before
+giving up and killing the connection if no response is obtained from the other end.
+
+```
+Dead connection detected in: 5 min + (30s × 5) = 7.5 minutes
 ```
 
 ## Note:
