@@ -22,6 +22,7 @@ net.core.optmem_max: "65535"
 
 net.ipv4.tcp_rmem: "4096 1048576 16777216"
 net.ipv4.tcp_wmem: "4096 1048576 16777216"
+
 net.ipv4.tcp_slow_start_after_idle: "0"
 net.ipv4.tcp_fin_timeout: "15"
 net.ipv4.tcp_keepalive_time: "300"
@@ -107,6 +108,31 @@ net.core.rmem_max = 212992
 net.core.wmem_max = 212992
 net.core.rmem_default = 212992
 net.core.wmem_default = 212992
+```
+
+#### 4. net.ipv4.tcp_rmem & net.ipv4.tcp_wmem
+`net.ipv4.tcp_wmem` controls the send buffer sizes for TCP sockets. This tuple consists of three values, representing the `minimum`, `default`, and `maximum` values for the send buffer.
+<br>
+
+`net.ipv4.tcp_rmem` controls the receive buffer sizes. <br>
+
+With 2 setting above will be impact memory:
+```
+# Worst case scenario (all connections maxed out):
+Memory = (tcp_rmem_max + tcp_wmem_max) × active_connections
+
+# Example with your 10 MB settings:
+1000 connections × 20 MB = 20 GB (theoretical max)
+100 connections × 20 MB = 2 GB
+```
+
+## Note:
+### 1.1 Jumbo frames
+By default the maximum transmission unit (MTU) is 1500 bytes. Jumbo frames should be enabled when the MTU is larger than the default, or when smaller messages are aggregated to be larger than 1500 bytes. By enabling jumbo frames, more data is sent per ethernet frame. The MTU may be increased to a value up to 9000 bytes. <br>
+
+To enable jumbo frames add the following line to the configuration script of the network interface, such as /etc/sysconfig/network-scripts/ifcfg-eth0: <br>
+```
+MTU=9000
 ```
 
 ## link references
