@@ -46,14 +46,11 @@ RX Jumbo:       0
 TX:             512
 ```
 
-<<<<<<< HEAD
-=======
 command increase buffer ring network using maxium card support
 ```
 ethtool -G eth0 rx 4096 tx 4096
 ```
 
->>>>>>> tri
 check current network server using command cat /proc/softirqs or ps aux | grep ksoftirq if high queue network using command below is will be most suitable
 
 [what is ring buffer?](https://docs.kernel.org/userspace-api/perf_ring_buffer.html)
